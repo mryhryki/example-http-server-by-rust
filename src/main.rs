@@ -1,11 +1,11 @@
-use std::io::Read;
-use std::net::{TcpListener, TcpStream};
+use std::io::{Read, Write};
+use std::net::{TcpListener, TcpStream, Shutdown};
 
-struct HttpRequest {
-    method: String,
-    pathname: String,
-    http_version: String,
-}
+// struct HttpRequest {
+//     method: String,
+//     pathname: String,
+//     http_version: String,
+// }
 
 fn main() -> std::io::Result<()> {
     let listener = TcpListener::bind("127.0.0.1:8080")?;
@@ -23,6 +23,11 @@ fn handle_client(mut stream: TcpStream) {
     while len > 0 {
         for i in 0..len {
             if buf[i] == 13 && buf[i + 1] == 10 {
+                if cursor == i {
+                    stream.write("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset: utf-8\r\n\r\n<h1>OK</h1>".as_bytes()).unwrap();
+                    stream.shutdown(Shutdown::Both).unwrap();
+                    return;
+                }
                 println!("{:#?}", String::from_utf8(buf[cursor..(i)].to_vec()).unwrap());
                 cursor = i + 2;
             }
