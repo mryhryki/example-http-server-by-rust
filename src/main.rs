@@ -2,6 +2,8 @@ use crate::http::{HttpRequest, HttpResponse};
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
+use crate::http::parser::parse_http_request;
+use crate::http::structs::HttpResponse;
 
 mod http;
 
@@ -39,7 +41,7 @@ fn main() -> std::io::Result<()> {
 }
 
 fn handle_client(stream: &TcpStream) -> HttpResponse {
-    let request = parse_request(stream);
+    let request = parse_http_request(stream);
 
     if request.http_version != "HTTP/1.1" {
         return HttpResponse {
@@ -76,32 +78,3 @@ fn handle_client(stream: &TcpStream) -> HttpResponse {
     }
 }
 
-fn parse_request(stream: &TcpStream) -> HttpRequest {
-    let reader = BufReader::new(stream);
-
-    let mut lines_iter = reader.lines();
-    let mut line = lines_iter.next().unwrap().unwrap();
-
-    let mut arr = line.split(" ");
-    let method = String::from(arr.next().unwrap_or("UNKNOWN"));
-    let pathname = String::from(arr.next().unwrap_or("?"));
-    let http_version = String::from(arr.next().unwrap_or("UNKNOWN_HTTP_VERSION"));
-
-    let mut headers = HashMap::new();
-    while line != "" {
-        line = lines_iter.next().unwrap().unwrap();
-        let mut arr = line.split(":");
-        let key = arr.next().unwrap_or("").trim().to_ascii_lowercase();
-        let val = arr.next().unwrap_or("").trim();
-        if key != "" && val != "" {
-            headers.insert(String::from(key), String::from(val));
-        }
-    }
-
-    HttpRequest {
-        method,
-        pathname,
-        http_version,
-        headers,
-    }
-}
